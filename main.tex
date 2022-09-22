@@ -7,6 +7,9 @@
 \usepackage{tikz}
 \usepackage{biblatex} %Imports biblatex package
 \addbibresource{references.bib} %Import the bibliography file
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{corollary}{Corollary}[theorem]
+\newtheorem{lemma}[theorem]{Lemma}
 \title{Stat RL}
 \author{Chufan Chen}
 \date{September 2022}
@@ -198,14 +201,15 @@ In reinforcement learning, it's easier to work with Q-values: $Q^*(s,a)$, as $\p
     Q^*(s,a)=R(s,a)+\gamma E_{s'\sim P(s,a)}[max_{a'\in A}Q^*(s',a')]
 \end{equation}
 We often say the policy is a greedy policy of the particular Q-function by the way of inducing a policy from a state-action function/Q-function. $\pi^*(s)$ is the greedy policy with respect to $Q^*$. We use shorthand $\pi_Q$ to denote the procedure of turning a Q-value function into its greedy policy, and the above equation can be written as \[\pi^*=\pi_{Q^*}:=(s \mapsto arg\max_{a\in A}Q^*(s,a))\].
-$V^*$ and $Q^*$ are uniquely defined, but the $\pi^*$ is not necessarily unique. For example, consider an MDP where the immediate rewards are zero everywhere, then any policy is optimal. 
-Bellman operators:$\mathcal{T}: \mathbb{R}^{S\times A}\rightarrow \mathbb{R}^{S\times A}$, $\forall f \in \mathbb{R}^{S\times A}$, $(\mathcal{T}f)(s,a)=R(s,a)+\gamma E_{s'\sim P(s,a)}[V_f(s')]$, where $V_f(s'):=\max_{a'}f(s',a')$. This allows us to rewrite Bellman Optimality Equation \ref{eq4} in the following concise form, which implies that $Q^*$ is the fixed point of the operator $\mathcal{T}$:\[Q^*=\mathcal{T}Q^*\]. Similarly define $\mathcal{T}^{\pi}: \mathbb{R}^{S\times A}\rightarrow \mathbb{R}^{S\times A}$, $(\mathcal{T}^{\pi}f)(s,a)=R(s,a)+\gamma E_{s'\sim P(s,a)}[f(s',\pi(s'))]$. We can rewrite the Bellman Equation for Policy Evaluation \ref{eq2} to \[Q^{\pi}=\mathcal{T}Q^{\pi}\]. With abuse of notation: $V^{*}=\mathcal{T}V^*$ and $V^{\pi}=\mathcal{T^{\pi}}V^{\pi}$.
 \[
 V^*=V^{\pi^*},
 Q^*=Q^{\pi^*}
 \]
+$V^*$ and $Q^*$ are uniquely defined, but the $\pi^*$ is not necessarily unique. For example, consider an MDP where the immediate rewards are zero everywhere, then any policy is optimal. 
+Bellman operators:$\mathcal{T}: \mathbb{R}^{S\times A}\rightarrow \mathbb{R}^{S\times A}$, $\forall f \in \mathbb{R}^{S\times A}$, $(\mathcal{T}f)(s,a)=R(s,a)+\gamma E_{s'\sim P(s,a)}[V_f(s')]$, where $V_f(s'):=\max_{a'}f(s',a')$. This allows us to rewrite Bellman Optimality Equation \ref{eq4} in the following concise form, which implies that $Q^*$ is the fixed point of the operator $\mathcal{T}$:\[Q^*=\mathcal{T}Q^*\]. Similarly define $\mathcal{T}^{\pi}: \mathbb{R}^{S\times A}\rightarrow \mathbb{R}^{S\times A}$, $(\mathcal{T}^{\pi}f)(s,a)=R(s,a)+\gamma E_{s'\sim P(s,a)}[f(s',\pi(s'))]$. We can rewrite the Bellman Equation for Policy Evaluation \ref{eq2} to \[Q^{\pi}=\mathcal{T}^{\pi}Q^{\pi}\]. With abuse of notation, we can write bellman equation for value function as $V^{*}=\mathcal{T}V^*$ and $V^{\pi}=\mathcal{T}^{\pi}V^{\pi}$. Strictly speaking, the $\mathcal{T}$ and $\mathcal{T}^{\pi}$ here are different from the equation above.
+
 \section{Planning in MDPs}
-Planning means we want to compute $V^{\pi},Q^{\pi},V^{*},Q^{*}$ given the MDP model. Value iteration and policy iteration are two basic algorithms for planning.
+Planning means we want to compute $V^{\pi}, Q^{\pi}, V^{*}, Q^{*}$ given the MDP model. Value iteration and policy iteration are two basic algorithms for planning.
 \subsection{Value Iteration}
 In value iteration, we are interested in computing $Q^*$ and it satisfies the bellman optimality equation $Q^*=\mathcal{T}Q^*$. In general, the equation is a fix point equation, and $\mathcal{T}$ is the fix point operator. This kind of problem is studied extensively in numerical analysis. One of the most  basic ideas you can try here is the power method which starts with an arbitrary function and keeps applying the operator. If the operator satisfies some property, it's getting closer and closer to the real function. We'll show that $\mathcal{T}$ satisfies the contraction property in the MDP setting.\\
 The algorithm: define $Q^{*,0}:=\Vec{0}\in \mathbb{R}^{S\times A}$. \[Q^{*,h}:=\mathcal{T}Q^{*,h-1}\], stop at large $h=H$. There are two questions:
@@ -214,7 +218,7 @@ The algorithm: define $Q^{*,0}:=\Vec{0}\in \mathbb{R}^{S\times A}$. \[Q^{*,h}:=\
     \item Can I extract a good policy from $Q^{*, H}$? How good is this policy $\pi_{Q^{*, H}}$?
 \end{itemize}
 \[\pi_h := \pi_{Q^{*,h}}, Q^{*,h} \neq Q^{\pi_h}\].
-I have an arbitrary $f\in \mathbb{R}^{S\times A}$. I'll act using $\pi_f$ in M. I know that $\Vert f-Q^*\Vert$ is small. Can I bound $V^{*}-V^{\pi_f}$?\\
+Let's answer the second question first. I have an arbitrary $f\in \mathbb{R}^{S\times A}$. I'll act using $\pi_f$ in M. I know that $\Vert f-Q^*\Vert$ is small. Can I bound $V^{*}-V^{\pi_f}$?\\
 Result: \[\Vert  V^*-V^{ \pi_f} \Vert_{\infty} \leq \frac{\alpha \Vert f-Q^{*}\Vert_{\infty}}{1-\gamma}\]\cite{Singh1994AnFunctions}
 \begin{proof}
 $\Vert V^*-V^{\pi_f}\Vert_{\infty}$ is always non-negative by definition. $\forall s$, 
@@ -236,7 +240,76 @@ So, \[
 $f(s,\pi_f(s)) \geq f(s,\pi^*(s'))$. By def: $\pi_f=arg\max_{a\in A}f(s,a)$. $f(s,\pi_f(s))=\max_{a\in A}f(s,a) \geq f(s,a'). \forall a' \in A$.
 \end{proof}
 For finite-horizon \[\Vert  V^*-V^{ \pi_f} \Vert_{\infty} \leq \alpha H \Vert f-Q^{*}\Vert_{\infty}\]
-\[\frac{1}{1-\gamma} \sim H\]
+\[\frac{1}{1-\gamma} \sim H\].
+Then it remains to show that by performing value iteration for a large number of iterations, we'll get a good  approximation of $Q^*$ under the infinity norm. Goal: bound $\Vert Q^{*,H}-Q^{*}\Vert_{\infty}$.
+\begin{lemma}
+$\forall f,f'$: $\Vert\mathcal{T}f-\mathcal{T}f'\Vert_{\infty}\leq \gamma \Vert f-f'\Vert_{\infty}$. Formally We say that the $\mathcal{T}$ operator is a $\gamma$ contraction under the L-infinity norm.
+\end{lemma}
+The lemma is useful because $\forall h \geq 1$, 
+\begin{equation*}
+\begin{split}
+    \Vert Q^{*,H}-Q^{*}\Vert_{\infty}&=\Vert \mathcal{T}Q^{*,H-1}-\mathcal{T}Q^{*}\Vert_{\infty}\\
+    & \leq \gamma \Vert Q^{*,H-1}-Q^{*}\Vert_{\infty} \\
+    & \leq \gamma^H \Vert Q^{*,0}-Q^{*}\Vert_{\infty} \\
+    & \leq \gamma^{H} \frac{R_{max}}{1-\gamma}
+\end{split}
+\end{equation*}
+How about using a small $\gamma$ to compute a value function and policy as a warmup/starting point?\\
+Then all it remains is to prove the contraction property. As a side comment, given that we have the bound we can easily backup the H to achieve a certain desired bound. For example, I want $\Vert Q^{*, H}-Q^{*}\Vert_{\infty} \leq \epsilon$. How large H needs to be? The answer is $H \geq \frac{1}{1-\gamma} \log{\frac{R_{max}}{\epsilon(1-\gamma)}}$.
+When we prove some infinity norm is upper bound by some infinity norm else. For LHS things, what you particularly do is consider the function you evaluate at any state/state-action pair and bound that uses the RHS at every single state/state-action pair, then you can replace the LHS with infinity norm.
+\begin{proof}
+   $\forall (s,a)$, 
+   \begin{equation*}
+   \begin{split}
+    |(\mathcal{T}f)(s,a)-(\mathcal{T}f')(s,a)|&\\
+       &=   |R(s,a)+\gamma E_{s'\sim P(s,a)}[V_f(s')]-R(s,a)-\gamma E_{s'\sim P(s,a)}[V_{f'}(s')]|\\
+       &= \gamma |E_{s'\sim P(s,a)}[V_f(s')-V_{f'}(s')]|\\
+       & \leq \gamma \Vert V_f-V_{f'}\Vert_{\infty}
+   \end{split}
+   \end{equation*}
+   Then we want to show that $\gamma \Vert V_f-V_{f'}\Vert_{\infty} \leq \Vert f-f'\Vert_{\infty}$. Note that $V_f$ and $V_{f'}$ are state value function($\mathbb{R}^{S}$) whereas  $f$ and $f'
+   $ are state-action value function($\mathbb{R}^{S\times A}$).\\
+    It suffices to show: $\forall s$ $|V_f(s)-V_{f'}(s)| \leq \max_{a} |f(s,a)-f'(s,a)|$.
+    \begin{equation*}
+        \begin{split}
+            |V_f(s)-V_{f'}(s)| &\leq \max_{a} |f(s,a)-f'(s,a)| \\
+            \Leftrightarrow |\max_{a}f(s,a)-\max_{a}f'(s,a)| &\leq \max_{a} |f(s,a)-f'(s,a)|
+        \end{split}
+    \end{equation*}
+    w.l.o.g we can assume $V_f(s) \geq V_{f'}(s)$ and define $a^*=arg\max_{a}f(s,a)$ (If we assume $V_f(s) \leq V_{f'}(s)$ now we need to define $a^*=arg\max_{a}f'(s,a)$). So, $f(s,a^*)=V_f(s)=\max_{a}f(s,a)$. 
+   \begin{equation*}
+       \begin{split}
+           \max_{a}f(s,a)-\max_{a}f'(s,a) &= f(s,a^*)-\max_{a}f'(s,a) \\
+           &\leq  f(s,a^*)-f'(s,a^*) \\
+           &= |f(s,a^*)-f'(s,a^*)|\\
+           &\leq \Vert f-f'\Vert_{\infty}
+       \end{split}
+   \end{equation*}
+\end{proof}
+An alternative way of bounding $\Vert Q^{*, H}-Q^{*}\Vert_{\infty}$.We borrow the concept from the finite-horizon MDP and bring a new informal definition of value function(H truncated value function)\[ V^{\pi, H}(s) := E[\sum_{t=1}^{H}\gamma^{t-1}r_t \mid \pi, s_1=s]\]. We only care about the maximum value obtained from the state: \[ V^{*, H}(s) := \max_{\pi}V^{\pi, H}(s)\]. Similarly we can define $Q^{*,H}(s,a)$.\\ 
+Claim: $Q^{*,H}$ as the output of VI is the optimal Q-function for the H-step truncated objective.\[Q^{*,0}=\Vec{0}. Q^{*,1}=\mathcal{T}Q^{*,0}=R. Q^{*,2}=R(s,a)+\gamma E_{s'\sim P(s,a)}[max_{a'}R(s',a')]\]
+\[V^{*,H})(s)=\max_{a}Q^{*,H}(s,a)\]
+Note that $\pi^*$ is optimal wrt $\sum_{t=1}^{\infty}\gamma^{t-1}r_t$.$\pi^{*,H}$ is optimal wrt $\sum_{t=1}^{H}\gamma^{t-1}r_t$. So, 
+\[
+Q^{\pi^*,H} \leq Q^{*,H}
+\]
+\begin{equation*}
+\begin{split}
+      0 \leq Q^*-Q^{*,H} &\leq Q^*-Q^{\pi^*,H} \\
+    &= Q^{\pi^*}-Q^{\pi^*,H}   
+\end{split}
+\end{equation*}
+
+$\forall s,a$, \begin{equation*}
+    \begin{split}
+        &Q^{\pi^*}(s,a)-Q^{\pi^*,H}(s,a) \\
+        &= E[(\sum_{t=1}^{\infty}\gamma^{t-1}r_t)-(\sum_{t=1}^{H}\gamma^{t-1}r_t)\mid s_1=s,a_1=a,\pi^*] \\
+        &=E[\sum_{t=H+1}^{\infty}\gamma^{t-1}r_t \mid s_1=s,a_1=a,\pi^*]\\
+        &\leq \gamma^H(\sum_{t=1}^{\infty} \gamma^{t-1}R_{max}) \\
+        &=\frac{\gamma^H R_{max}}{1-\gamma}
+    \end{split}
+\end{equation*}
+If $Q^{*,0}$ is not a zero vector. We modify the definition as \[ V^{\pi, H}(s) := E[\sum_{t=1}^{H}\gamma^{t-1}r_t+\gamma^{H}Q^{*,0}(s_H,a_H) \mid \pi, s_1=s]\]. In other words, $Q^{*,0}=\Vec{0}$ is a special case where $Q^{*,0}(s_H,a_H)=0$.
 \subsection{Policy Iteration}
 
 \end{document}
