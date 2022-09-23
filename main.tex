@@ -130,16 +130,20 @@ V^{\pi}(s) & = E[\sum_{t=1}^{\infty}\gamma^{t-1}r_t \mid s_1=s,\pi] \\
 \end{equation}
 \begin{equation} \label{eq2}
 \begin{split}
-    Q^{\pi}(s,a) & = R(s,a)+\gamma E_{s'\sim(s,a)}[V^{\pi}(s')] \\
-                & =  R(s,a)+\gamma E_{s'\sim(s,a)}[Q^{\pi}(s', \pi(s'))]           
+    Q^{\pi}(s,a) & = R(s,a)+\gamma E_{s'\sim P(s,a)}[V^{\pi}(s')] \\
+                & =  R(s,a)+\gamma E_{s'\sim P(s,a)}[Q^{\pi}(s', \pi(s'))]           
 \end{split}
 \end{equation}
 In $Q(s, \pi(s))$ and $R(s,\pi(s))$ we treat $\pi$ as a deterministic policy for brevity, and for stochastic policies this shorthand should be interpreted as $E_{a\sim\pi(s)}[Q^{\pi}(s,a)]$ and $E_{a\sim\pi(s)}[R^{\pi}(s,a)]$.\\
 If we assume S and A are finite, upon fixing an arbitrary order of states and actions, we can rewrite \ref{eq1} and \ref{eq2} in matrix form and derive an analytical solution for $V^{\pi}$ and $Q^{\pi}$ using linear algebra as below: Define
 \begin{itemize}
     \item $V^{\pi}$ as the $\mid S\mid \times 1$ vector $[V^{\pi}(s)]_{s\in S}$
-    \item $R^{\pi}$ as the reward vector for policy $\pi$ with dimension $\mid S \mid \times 1$, whose s-th entry is \[[R^{\pi}]_s=E_{a\sim\pi(s)}[R(s,a)]\].
-    \item $P^{\pi}$ as the matrix $[P(s'\mid s,\pi(s))]_{s\in S,s'\in S}$, whose ($s,s'$)-th entry is \[[P^{\pi}]_{s,s'}=E_{a\sim\pi(s)}[P(s'\mid s,a)]\]. In fact, this matrix describes a Markov chain induced by MDP M and policy $\pi$. Its s-th row is the distribution over next-states upon taking actions according to $\pi$ at state s , which we also write as $[P(s,\pi)]^{\top}$.
+    \item $R^{\pi}$ as the reward vector for policy $\pi$ with dimension $\mid S \mid \times 1$, whose s-th entry is \[[R^{\pi}]_s=E_{a\sim\pi(s)}[R(s,a)]\]. For deterministic policy $\pi$, \[
+        [R^{\pi}]_s=R(s,\pi(s))
+    \].
+    \item $P^{\pi}$ as the matrix $[P(s'\mid s,\pi(s))]_{s\in S,s'\in S}$, whose ($s,s'$)-th entry is \[[P^{\pi}]_{s,s'}=E_{a\sim\pi(s)}[P(s'\mid s,a)]\]. Similarly, for deterministic policy $\pi$, \[
+        [P^{\pi}]_{s,s'}=P(s'\mid s,\pi(s))
+    \].In fact, this matrix describes a Markov chain induced by MDP M and policy $\pi$. Its s-th row is the distribution over next-states upon taking actions according to $\pi$ at state s , which we also write as $[P(s,\pi)]^{\top}$.
 \end{itemize}
 Then from \ref{eq1} we have
 \begin{equation}
