@@ -55,6 +55,7 @@ jobs:
       run: |
         git config --global user.name "ChufanSuki_GithubAction"
         git config --global user.email "chenchufan@zju.edu.cn"
+        git checkout gh-page
         git add main.pdf
         git commit -m "commit message"
         git push origin gh-page
