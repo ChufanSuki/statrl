@@ -135,7 +135,7 @@ V^{\pi}(s) & = E[\sum_{t=1}^{\infty}\gamma^{t-1}r_t \mid s_1=s,\pi] \\
 \end{split}
 \end{equation}
 In $Q(s, \pi(s))$ and $R(s,\pi(s))$ we treat $\pi$ as a deterministic policy for brevity, and for stochastic policies this shorthand should be interpreted as $E_{a\sim\pi(s)}[Q^{\pi}(s,a)]$ and $E_{a\sim\pi(s)}[R^{\pi}(s,a)]$.\\
-If we assume S and A are finite, upon fixing an arbitrary order of states and actions, we can rewrite \ref{eq1} and \ref{eq2} in matrix form and derive an analytical solution for $V^{\pi}$ and $Q^{\pi}$ using linear algebra as below: Define
+If we assume S and A are finite, upon fixing an arbitrary order of states and actions, we can rewrite \ref{eq1} and \ref{eq2} in matrix form and derive an analytical solution for $V^{\pi}$ and $Q^{\pi}$ using linear algebra as below. Define:
 \begin{itemize}
     \item $V^{\pi}$ as the $\mid S\mid \times 1$ vector $[V^{\pi}(s)]_{s\in S}$
     \item $R^{\pi}$ as the reward vector for policy $\pi$ with dimension $\mid S \mid \times 1$, whose s-th entry is \[[R^{\pi}]_s=E_{a\sim\pi(s)}[R(s,a)]\]. For deterministic policy $\pi$, \[
@@ -147,12 +147,30 @@ If we assume S and A are finite, upon fixing an arbitrary order of states and ac
 \end{itemize}
 Then from \ref{eq1} we have
 \begin{equation}
-    [V^{\pi}]_s=[R^{\pi}]_s+\gamma \langle P(s,\pi),V^{\pi}\rangle
+    \forall s, [V^{\pi}]_s=[R^{\pi}]_s+\gamma \langle P(s,\pi),V^{\pi}\rangle
 \end{equation}
+\[
+V^{\pi} =  R^{\pi}+\gamma P^{\pi}V^{\pi}
+\]
+When it comes to Q function, the notations are slightly different. Define:
+\begin{itemize}
+    \item $Q^{\pi}$ as the $\mid S \times A \mid \times 1$ vector $[Q^{\pi}(s,a)]_{s\in S,a\in 
+ A}$
+    \item $R$ as the reward vector with dimension $\mid S \times A \mid \times 1$, whose (s,a)-th entry is \[[R]_{s,a}=R(s,a)\]. 
+    \item $P$ as the $|S \times A|\times |S|$ matrix $[P(s'\mid s,a)]_{s\in S,s'\in S}$, whose ($(s,a),s'$)-th entry is \[[P]_{(s,a),s'}=P(s'\mid s,a)\]. 
+\end{itemize}
+From \ref{eq2} we have:
+\begin{equation}
+    \forall s,a, [Q^{\pi}]_{(s,a)}=[R]_{(s,a)}+\gamma \langle [P]_{(s,a)}, V^{\pi}\rangle
+\end{equation}
+\[
+Q^{\pi}=R+\gamma PV^{\pi}
+\]
 \begin{align*}
 V^{\pi} &=  R^{\pi}+\gamma P^{\pi}V^{\pi} \\ 
 (I-\gamma P^{\pi})V^{\pi} &=  R^{\pi} \\
-V^{\pi} &= (I-\gamma P^{\pi})^{-1}R^{\pi} 
+V^{\pi} &= (I-\gamma P^{\pi})^{-1}R^{\pi} \\
+Q^{\pi}&=R+\gamma P(1-\gamma P^{\pi})^{-1}R^{\pi}
 \end{align*}   
 Now we notice that matrix$(I_{\mid S \mid}-\gamma P^{\pi})$ is always invertible.  
 Ways to prove a matrix $A$ is invertible:
@@ -162,7 +180,7 @@ Ways to prove a matrix $A$ is invertible:
     \item The determinant of $A$ is nonzero.
     \item If at any point of the Gauss-Jordan process on $A$ you can get it into a reduced row echelon form. Likewise,  $A$ is not invertible if you get a row or column of all zeros at some point while using Gauss-Jordan.
 \end{enumerate}
-
+Here we use the first method:
 \begin{equation}
 \begin{split}
     \Vert(I-\gamma P^{\pi})x\Vert_{\infty}
