@@ -4,12 +4,14 @@
 \usepackage{amsthm}
 \usepackage{mathtools,xparse}
 \usepackage{amsfonts}
+\usepackage[usenames,dvipsnames]{color}
 \usepackage{tikz}
 \usepackage{biblatex} %Imports biblatex package
 \addbibresource{references.bib} %Import the bibliography file
 \newtheorem{theorem}{Theorem}[section]
 \newtheorem{corollary}{Corollary}[theorem]
 \newtheorem{lemma}[theorem]{Lemma}
+\usepackage[colorlinks=true]{hyperref}
 \title{Stat RL}
 \author{Chufan Chen}
 \date{September 2022}
@@ -224,7 +226,7 @@ Result: \[\Vert  V^*-V^{ \pi_f} \Vert_{\infty} \leq \frac{\alpha \Vert f-Q^{*}\V
 $\Vert V^*-V^{\pi_f}\Vert_{\infty}$ is always non-negative by definition. $\forall s$, 
 \begin{equation*}
 \begin{split}
-V^{*}(s)-V^{\pi}(s) &= Q^*(s,\pi^*(the s))-Q^{\pi_f}(s,\pi_f(s))\\
+V^{*}(s)-V^{\pi}(s) &= Q^*(s,\pi^*(s))-Q^{\pi_f}(s,\pi_f(s))\\
 &= Q^*(s,\pi^*(s))-Q^*(s,\pi_f(s))+Q^*(s,\pi_f(s))-Q^{\pi_f}(s,\pi_f(s))\\
 &\leq Q*(s,\pi^{*}(s))-f(s,\pi^{*}(s))+f(s,\pi_f(s))-Q^*(s,\pi_f(s))\\
 & +R(s,\pi_f(s))+\gamma E_{s'\sim P(s,\pi_f)}[V^*(s')]-R(s,\pi_f) - \gamma E_{s'\sim P(s,\pi_f)}[V^{\pi_f}(s')] \\
@@ -311,5 +313,96 @@ $\forall s,a$, \begin{equation*}
 \end{equation*}
 If $Q^{*,0}$ is not a zero vector. We modify the definition as \[ V^{\pi, H}(s) := E[\sum_{t=1}^{H}\gamma^{t-1}r_t+\gamma^{H}Q^{*,0}(s_H,a_H) \mid \pi, s_1=s]\]. In other words, $Q^{*,0}=\Vec{0}$ is a special case where $Q^{*,0}(s_H,a_H)=0$.
 \subsection{Policy Iteration}
+Initial $\pi_0$ arbitrarily, and repeat the following iterative procedure: for $k=1,2,\hdots$, $\pi_k \leftarrow \pi_{Q^{\pi_{k-1}}}$.
+\begin{enumerate}
+    \item Compute the $Q^{\pi_{k-1}}$. \textcolor{yellow}{Policy Evaluation Step}
+    \item Take greedy policy. \textcolor{yellow}{Policy Improvement Step}
+\end{enumerate}
+Assume we can solve $Q^{\pi}$ for given $\pi$. How?
+\[
+Q^{\pi}=\mathcal{T}^{\pi}Q^{\pi}. (\mathcal{T}^{\pi}f)(s,a)=R(s,a)+\gamma E_{s'\sim P(s,a)}[f(s',\pi)].
+\]
+The above is a linear equation that can solve by matrix inverse. Alternatively, start with arbitrarily $f_0$, $f_i \leftarrow \mathcal{T}^{\pi}f_{i-1}$(works because $\mathcal{T}^{\pi}$ is $\gamma$-contraction under $l_{\infty}$).
+\begin{theorem}[Policy improvement theorem]
+ $V^{\pi_k} \geq V^{\pi_{k-1}}$. Furthermore, unless $\pi_k=\pi^*$ , improvement in at least 1 state is non-zero.
+\end{theorem}
+\begin{corollary}
+PI terminates in at most $|A|^{|S|}$ iterations.
+\end{corollary}
+\begin{proof}
+    "Monotonicity of $\mathcal{T}$": $\forall f \leq f'$, $\mathcal{T}f \leq \mathcal{T}f'$.\[
+        (\mathcal{T}f)(s,a)=R(s,a)+\gamma E_{s'\sim P(s,a)}[\max_{a'}f(s',a')]
+    \]
+    ($v_f \leq v_{f'}$)\\ 
+    \begin{equation*}
+        \begin{split}
+            Q^{\pi_k}=\mathcal{T}^{\pi_k}Q^{\pi_k}\leq \mathcal{T}Q^{\pi_k}=\mathcal{T}^{\pi_{k+1}}Q^{\pi_k}
+        \end{split}
+    \end{equation*}
+    \begin{enumerate}
+        \item $\forall f,\pi$, $\mathcal{T}^{\pi}f \leq \mathcal{T}f$.
+        \item $\pi_{k+1}=\pi_{Q^{\pi_k}}$.
+        \item $\forall f$, $\mathcal{T}f=\mathcal{T}^{\pi_f}f$.($\max_{a'}f(s',a')=f(s',\pi_f)$)
+    \end{enumerate}
+    \begin{equation*}
+        \begin{split}
+            Q^{\pi_k} &\leq \mathcal{T}^{\pi_{k+1}}Q^{\pi_k} \\
+            & \leq \mathcal{T}^{\pi_{k+1}}(\mathcal{T}^{\pi_{k+1}}Q^{\pi_k}) \text{(policy evaluation operator also has monotonicity property)}\\
+            & \leq (\mathcal{T}^{\pi_{k+1}})^{\infty}Q^{\pi_k} \\
+            & = Q^{\pi_{k+1}}
+        \end{split}
+    \end{equation*}
+\end{proof}
+\begin{proof}[Alternative Proof]
+    Define: (Advantage function) $A^{\pi}(s,a)=Q^{\pi}(s,a)-V^{\pi}(s)$. $A^{\pi}(s,\pi)=0$. It measure the deviation from choosing a action a and then following the policy $\pi$ with following policy $\pi$.
+    \begin{lemma}[Performance-diff lemma\cite{Kakade2002ApproximatelyLearning}]
+        $\forall \pi',\pi$, \[
+            V^{\pi'}(s)-V^{\pi}(s)=\frac{1}{1-\gamma}E_{s'\sim d^{\pi',s}}[A^{\pi}(s',\pi')]
+        \] 
+        $d^{\pi',s}$ is the normalized occupancy of $\pi'$ with s as initial state.\\
+        $d^{\pi}=(1-\gamma)\sum_{t=1}^{\infty}\gamma^{t-1}d^{\pi}_t$, $d^{\pi}_t$ is the distribution of $s_t$ under $\pi$, starting from $d_0$.
+    \end{lemma}
+    \begin{equation*}
+    \begin{split}
+                V^{\pi_{k+1}}(s) \geq V^{\pi_{k}}(s) &\Leftrightarrow  V^{\pi_{k+1}}(s) - V^{\pi_{k}}(s) \geq 0 \\
+                & \Leftrightarrow \frac{1}{1-\gamma}E_{s' \sim d^{\pi_{k+1},s}}[A^{\pi_k}(s',\pi_{k+1}(s'))] \geq 0
+    \end{split}
+    \end{equation*}
+    \begin{equation*}
+        \begin{split}
+            A^{\pi_k}(s',\pi_{k+1}(s')) &= Q^{\pi_k}(s',\pi_{k+1}(s'))-V^{\pi_k}(s') \\
+            & = \max_{a'}Q^{\pi_k}(s',a')-Q^{\pi_k}(s',\pi_k) \geq 0
+        \end{split}
+    \end{equation*}
+
+\end{proof}
+\begin{proof}[Strictness] Towards contridiction: $V^{\pi_{k+1}}=V^{\pi_{k}}$. $\forall s'$, \[
+        A^{\pi_k}(s',\pi_{k+1})= 0 
+    \]. \[
+        Q^{\pi_k}(s',\pi_k)=\max_{a'}Q^{\pi_k}(s',a')
+    \]
+    \[ \forall s, V^{\pi_{k+1}}(s)=V^{\pi_{k}}(s) \xRightarrow{\text{we want to prove}} \pi_k=\pi^*\]
+    \[
+    \forall s, E_{s'\sim d^{\pi,s}}[A^{\pi_k}(s',\pi_{k+1}])]=0
+    \]
+    Claim: \[
+    A^{\pi_k}(s',\pi_{k+1})=0. \forall s'
+    \].
+    What if $\exists s$, $A^{\pi_k}(s,\pi_{k+1})>0$. $\Rightarrow V^{\pi_{k+1}}(s)-V^{\pi_{k}}(s)=\frac{1}{1-\gamma}E_{s'\sim d^{\pi,s}}[A^{\pi_k}(s',\pi_{k+1})]$. Remind that $d^{\pi,s}=(1-\gamma)\sum_{t=1}^{\infty}\gamma^{t-1}d^{\pi,s}_t$.
+    \begin{equation*}
+        \begin{split}
+            V^{\pi_{k+1}}(s)-V^{\pi_{k}}(s)&=\frac{1}{1-\gamma}E_{s'\sim d^{\pi,s}}[A^{\pi_k}(s',\pi_{k+1})]\\
+            &\geq E_{s'\sim d_1^{\pi,s}}[A^{\pi_k}(s',\pi_{k+1})]\\
+            &= A^{\pi_k}(s,\pi_{k+1}) > 0
+        \end{split}
+    \end{equation*}
+    \[
+    \max_{a'}Q^{\pi_k}(s',a')=Q^{\pi_k}(s',\pi_{k+1})=Q^{\pi_k}(s',\pi_{k}), \forall s'.
+    \]
+    \[
+        Q^{\pi_k}=\mathcal{T}^{\pi_k}Q^{\pi_k}=\mathcal{T}Q^{\pi_k}. Q^{\pi_k}= Q^*.
+    \]
+\end{proof}
+\printbibliography
 
 \end{document}
