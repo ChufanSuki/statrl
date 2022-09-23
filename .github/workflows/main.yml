@@ -57,5 +57,5 @@ jobs:
         git config --global user.email "chenchufan@zju.edu.cn"
         git add main.pdf
         git commit -m "commit message"
-        git push gh-page
+        git push origin gh-page
       if: github.event_name == 'push' && github.ref == 'refs/heads/main'
