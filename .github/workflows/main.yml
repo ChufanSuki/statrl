@@ -53,11 +53,9 @@ jobs:
 
     - name: Upload file to repository
       run: |
-        git init
         git config --local user.name "ChufanSuki_GithubAction"
         git config --local user.email "chenchufan@zju.edu.cn"
         git status 
-        git remote add origin https://github.com/ChufanSuki/statrl.git
         git checkout -b gh-pages
         git add main.pdf
         git commit -m "deploy to Github Pages"
