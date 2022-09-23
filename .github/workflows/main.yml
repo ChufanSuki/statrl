@@ -53,10 +53,13 @@ jobs:
 
     - name: Upload file to repository
       run: |
-        git config --global user.name "ChufanSuki_GithubAction"
-        git config --global user.email "chenchufan@zju.edu.cn"
-        git checkout gh-page
+        git init
+        git config --local user.name "ChufanSuki_GithubAction"
+        git config --local user.email "chenchufan@zju.edu.cn"
+        git status 
+        git remote add origin https://github.com/ChufanSuki/statrl.git
+        git checkout -b gh-pages
         git add main.pdf
-        git commit -m "commit message"
-        git push origin gh-page
+        git commit -m "deploy to Github Pages"
+        git push origin gh-pages -f
       if: github.event_name == 'push' && github.ref == 'refs/heads/main'
