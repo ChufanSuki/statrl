@@ -1,6 +1,6 @@
 \documentclass{report}
 \usepackage[utf8]{inputenc}
-\usepackage{amsmath}
+\usepackage{amsmath,amssymb}
 \usepackage{amsthm}
 \usepackage{mathtools,xparse}
 \usepackage{amsfonts}
@@ -14,6 +14,7 @@
 \newtheorem{corollary}{Corollary}[theorem]
 \newtheorem{lemma}[theorem]{Lemma}
 \usepackage[colorlinks=true]{hyperref}
+\DeclareMathOperator{\E}{\mathbb{E}}
 \title{Stat RL}
 \author{Chufan Chen}
 \date{September 2022}
@@ -100,6 +101,7 @@ Suppose there exists some constant $H_0$ such that $H \leq H_0$ holds almost sur
 So far all our definitions consider stationary dynamics, that is, the transition function only depends on the state and action, and does not depend on the time step. A finite-horizon MDP with non-stationary dynamics (and reward function) is a generalization: $M=(S,A,\{P_H\}_{h=1}^H,H,d_0)$, where $s_1\sim d_0,s_{h+1}\sim P_h(s_h,a_h)$ and $r_{h+1}=R_h(s_h,a_h)$. That is, the transition rule and reward function can change as time elapses. Stationary MDP is a special case of non-stationary MDP, $S_1=S_2=\hdots=S_H, P_1=P_2=\hdots=P_H$. On the other hand, non-stationary MDP is also a special case of stationary MDP, we can augment state space $s'=(s,h)$. Now the state space is H time larger, the benefit is that we can have a single function $P((s',h+1)\mid (s',h),a)$ and not every function for every time-step. By definition, $P((s',h')\mid (s,h),a)=0$ if $h'-h \neq 1$.
 
 \subsection{Policy and value}
+In general, a policy $\pi=(\pi_t)_{t\geq 0}$ is an infinite long sequence where for each $t \geq 0$, $\pi_t:(S\times A)^{t-1} \times S \rightarrow M_1(S)$ assigns a probability distribution to histories of length t.(For $\rho > 0$ we use $M_{\rho}(X)$ to denote the set of nonegative measures $\mu$ over $X$ that satisfy $\mu(X)=\rho$.)
 A (deterministic and stationary) policy $\pi:S\rightarrow A$ specifies a decision-making strategy in which the agent chooses actions adaptively based on the current state, i.e., $a_t = \pi(s_t)$. More generally, the agent may also choose actions according to a stochastic policy $\pi:S\rightarrow \Delta(A)$, and with a slight abuse of notation we write $a_t \sim \pi(s_t)$. A deterministic policy is its special case when $\pi(s)$ is a point mass for all $s\in S$. \\
 The goal of the agent is to choose a policy $\pi$ to maximize the expected discounted sum of rewards, or value:
 \begin{equation}
@@ -155,27 +157,27 @@ Then from \ref{eq1} we have
 \[
 V^{\pi} =  R^{\pi}+\gamma P^{\pi}V^{\pi}
 \]
-When it comes to Q function, the notations are slightly different. Define:
-\begin{itemize}
-    \item $Q^{\pi}$ as the $\mid S \times A \mid \times 1$ vector $[Q^{\pi}(s,a)]_{s\in S,a\in 
- A}$
-    \item $R$ as the reward vector with dimension $\mid S \times A \mid \times 1$, whose (s,a)-th entry is \[[R]_{s,a}=R(s,a)\]. 
-    \item $P$ as the $|S \times A|\times |S|$ matrix $[P(s'\mid s,a)]_{s\in S,s'\in S}$, whose ($(s,a),s'$)-th entry is \[[P]_{(s,a),s'}=P(s'\mid s,a)\]. 
-\end{itemize}
-From \ref{eq2} we have:
-\begin{equation}
-    \forall s,a, [Q^{\pi}]_{(s,a)}=[R]_{(s,a)}+\gamma \langle [P]_{(s,a)}, V^{\pi}\rangle
-\end{equation}
-\[
-Q^{\pi}=R+\gamma PV^{\pi}
-\]
+\begin{lemma}[Bellman consistency] 
+    For stationary polices, we have \[
+        V^{\pi}=Q^{\pi}(s,\pi(s))=\E_{a\sim \pi_{a\mid s}}
+    \] \[
+       Q^{\pi}=R(s,a)+\gamma \E_{s'\sim P(\cdot \mid s,a)}[V^{\pi}(s')]
+    \]
+    In matrix forms:
+    \[
+        V^{\pi}=R^{\pi}+\gamma P^{\pi}V^{\pi} \quad P^{\pi} \in \mathbb{R}^{S\times S}
+    \] \[
+        Q^{\pi}=R+\gamma PV^{\pi} 
+    \] \[
+        Q^{\pi}=R+\gamma P^{\pi}Q^{\pi} \quad P^{\pi} \in \mathbb{R}^{SA\times SA}
+    \] where $R \in \mathbb{R}^{SA},R^{\pi} \in \mathbb{R}^S$.
+\end{lemma}
 \begin{align*}
 V^{\pi} &=  R^{\pi}+\gamma P^{\pi}V^{\pi} \\ 
 (I-\gamma P^{\pi})V^{\pi} &=  R^{\pi} \\
-V^{\pi} &= (I-\gamma P^{\pi})^{-1}R^{\pi} \\
-Q^{\pi}&=R+\gamma P(1-\gamma P^{\pi})^{-1}R^{\pi}
+V^{\pi} &= (I-\gamma P^{\pi})^{-1}R^{\pi} 
 \end{align*}   
-Now we notice that matrix$(I_{\mid S \mid}-\gamma P^{\pi})$ is always invertible.  
+Now we notice that matrix$(I_{\mid S \mid}-\gamma P^{\pi})$ is always invertible/full rank for any $\gamma < 1$.  
 Ways to prove a matrix $A$ is invertible:
 \begin{enumerate}
     \item The null space/kernel of  A  is trivial. That is $Ax=0 \iff x=0$.
@@ -196,9 +198,16 @@ So we can conclude that
 \begin{equation}
     V^{\pi}=(I-\gamma P^{\pi})^{-1}R^{\pi}.
 \end{equation}
+\[
+P^{\pi}x= \begin{bmatrix}
+\langle P^{\pi}[1,:],x\rangle\\
+\vdots\\
+\langle P^{\pi}[n,:],x\rangle
+\end{bmatrix}
+\]
+By Holder's inequality, $\langle P^{\pi}[n,:],x\rangle \leq \Vert P^{\pi}[m,:]\Vert_{1}\Vert x\Vert_{\infty} \leq \Vert x\Vert_{\infty}$.\\
 Why does the infinity norm work here?\\
-$P$ is a row-stochastic matrix. 
-Hölder's inequality tells us that L1-norm and infinity norm are dual pairs.
+$P$ is a row-stochastic matrix. Hölder's inequality tells us that $l1$-norm and $l$-infinity norm are dual pairs.
 
 \subsection{State occupancy}
 \[(I-\gamma P^{\pi})^{-1}\] is a matrix, where each row (indexed by s) is the discounted state occupancy $d_s^{\pi}$, whose s'-th entry is \[d_s^{\pi}(s')=E[\sum_{t=1}^{\infty}\gamma^{t-1} \mathbb{1}[s_t=s'] \mid s_1=s,\pi]\]. It is similar to the notion of occupancy distribution/stationary distribution in the ergodic Markov chain.
@@ -207,10 +216,11 @@ Hölder's inequality tells us that L1-norm and infinity norm are dual pairs.
     \item $V^{\pi}(s)$ is the dot product between $d_s^{\pi}$ and reward vector.
     \item Can also be interpreted as the value function of the indicator reward function.
 \end{enumerate}
+Similaryly, we can define state-action occupancy $d^{\pi}(S_t=s,A_t=a)$.
 
 \subsection{Optimality}
-The standard goal in an MDP is to identify a policy that maximizes this value in every state. A policy achieving this is known as an optimal policy. Whether an optimal policy exists at all is not clear at this stage. In any case, if it exist, an optimal policy must satisfy $V^{\pi}=V^*$ where $v^*:S\rightarrow \mathbb{R}$ is defined by \[
-v^*(s)=\sup_{\pi}V^{\pi}(s),s\in S.  
+The standard goal in an MDP is to identify a policy that maximizes this value in every state. A policy achieving this is known as an optimal policy. Whether an optimal policy exists at all is not clear at this stage. In any case, if it exist, an optimal policy must satisfy $V^{\pi}=V^*$ where $V^*:S\rightarrow \mathbb{R}$ is defined by \[
+V^*(s)=\sup_{\pi \in \Pi}V^{\pi}(s),s\in S.  
 \]
 Let $\epsilon>0$. A policy $\pi$ is said to be $\epsilon$-optimal if \[
 V^{\pi} \geq V^*-\epsilon\Vec{1}.
@@ -221,7 +231,7 @@ Finding an $\epsilon$-optimal policy with a positive $\epsilon$ should intuitive
     \item What does $\pi^*$ looks like?
 \end{enumerate}
 \begin{proposition}
-It suffices to consider stationary policies.
+It suffices to consider stationary(memoryless) policies.
 \end{proposition}
 \begin{proof}
     It suffices to show that:\\
@@ -236,9 +246,50 @@ It suffices to consider stationary policies.
             &=\sum_{s,a}\nu_{\mu}^{\pi}(s,a)r(s,a)
         \end{split}
     \end{equation*}
+    Here, $\nu_{\mu}^{\pi}(s,a)$  is termed as the occupancy measure\[
+        \nu_{\mu}^{\pi}(s,a)=\sum_{t=1}^{\infty}\gamma^{t-1}d^{\pi}(S_t=s,A_t=a),
+    \] \[
+        \nu_{\mu}^{\pi}(s)=\sum_{t=1}^{\infty}\gamma^{t-1}d^{\pi}(S_t=s),
+    \] where $d^{\pi}(S_t=s)$ is marginal density function under policy $\pi$ at time t observe state s and $d^{\pi}(S_t=s, A_t=a)$ is marginal distribution function under policy $\pi$ at time t observe state-action pair (s,a). And the value function can alternatively be written in terms of occupancy measure as: $V^{\pi}_{\mu}=\langle\nu_{\mu}^{\pi}(s,a),r \rangle$. From above, we conclude that it suffices to prove that the occupancy measures with both policies are equivalent: $\nu_{\mu}^{\pi}=\nu_{\mu}^{\pi'}$. Consider $\pi'$ for any fixed $\pi$. Define: 
+    \begin{equation} \label{statinarypolicy}
+        \pi'(a\mid s) = 
+     \begin{cases}
+       \frac{\nu_{\mu}^{\pi}(s,a)}{\nu_{\mu}^{\pi}(s)} &\quad\text{if } \nu_{\mu}^{\pi}(s) > 0\\
+       \pi_0(a) &\quad\text{otherwise} \\
+     \end{cases}
+    \end{equation}
+    where $\nu_{\mu}^{\pi}(s)=\sum_{a}\nu_{\mu}^{\pi}(s,a)$. It is clear that $\pi'$ is stationary, $\pi':S\rightarrow \Delta(A)$. By law of total probability and \ref{statinarypolicy}:
+    \begin{equation}\label{eq5}
+        P^{\pi'}(s'\mid s)=\sum_{a}\pi'(a\mid s)P(s'\mid s,a)=\sum_{a} \frac{\nu_{\mu}^{\pi}(s,a)}{\nu_{\mu}^{\pi}(s)}P(s'\mid s,a)
+    \end{equation}
+    From the definition of occupancy measure, we had:
+    \begin{equation*}
+        \begin{split}
+            \nu_{\mu}^{\pi}(s)&=\sum_{t=1}^{\infty}\gamma^{t-1}P_{\mu}^{\pi}(S_t=s) \\
+            &= \mu(s)+\gamma \sum_{t=2}^{\infty}\gamma^{t-2}P_{\mu}^{\pi}P_{\mu}^{\pi}(S_t=s)\\
+            &= \mu(s)+\gamma \sum_{\Tilde{t}=1}^{\infty}\gamma^{\Tilde{t}-1}P_{\mu}^{\pi}P_{\mu}^{\pi}(S_{\Tilde{t}+1}=s)\quad [\Tilde{t}=t-1] \\
+            &=\mu(s)+\gamma \sum_{t=1}^{\infty}\gamma^{t-1}\sum_{s',a}P_{\mu}^{\pi}(S_t=s',A_t=a)P(s\mid s',a)\\
+            &=\mu(s)+\gamma \sum_{s',a}[\sum_{t=1}^{\infty}\gamma^{t-1}P_{\mu}^{\pi}(S_t=s',A_t=a)]P(s\mid s',a)\\
+            &=\mu(s)+\gamma  \sum_{s',a}\nu_{\mu}^{\pi}(s',a)P(s\mid s',a)
+        \end{split}
+    \end{equation*}
+    By multiplying and dividing $\nu_{\mu}^{\pi}(s')$ and using \ref{eq5}, we get:
+    \[
+    \nu_{\mu}^{\pi}(s)=\mu(s)+\gamma\sum_{s'}\nu_{\mu}^{\pi}(s')P^{\pi'}(s\mid s') \Rightarrow \nu_{\mu}^{\pi}=(I-\gamma P^{\pi'})^{-1}\mu
+    \].
+    Similarly, 
+    \[
+    \nu_{\mu}^{\pi'}(s)=\mu(s)+\gamma\sum_{s'}\nu_{\mu}^{\pi}(s')P^{\pi'}(s\mid s') \Rightarrow \nu_{\mu}^{\pi'}=(I-\gamma P^{\pi'})^{-1}\mu
+    \]
+    The occupancy measures and hence the value function corresponding to any general policy and the constructed stationary policy are shown to be equal.
 \end{proof}
-For infinite-horizon discounted MDPs, a
-stationary and deterministic policy always exists that is optimal for all starting states simultaneously. Let $\pi^*$ denote this optimal policy, and $V^* := V^{\pi^*}$. Bellman optimality equation: 
+\begin{corollary}
+    There exists an optimal policy that is stationary.
+\end{corollary}
+\begin{proposition}
+    For infinite-horizon discounted MDPs, a stationary and deterministic policy always exists that is optimal for all starting states simultaneously. 
+\end{proposition}
+Let $\pi^*$ denote this optimal policy, and $V^* := V^{\pi^*}$. Bellman optimality equation: 
 \begin{equation}\label{eq3}
     V^*(s)=\max_{a\in A}Q^*(s,a)=\max_{a\in A}(R(s,a)+\gamma E_{s'\sim P(s,a)}[V^*(s')])
 \end{equation}
@@ -250,13 +301,30 @@ stationary and deterministic policy always exists that is optimal for all starti
 Given the value function $V$, a greedy policy $\pi_{V}$ can be defined by selecting for each state the action that maximizes the state's value, i.e.,\[
 \pi_{V}(s)=arg\max_{a\in A}[R(s,a)+\gamma \sum_{s' \in S}P_{ss'}(a)V(s')],
 \] where ties for the maximum action are broken arbitrarily. Evaluating a greedy policy $\pi_{V}$ yields a new value function $V_{\pi_{V}}$, which we abbreviate as $V_{V}$. Value function $V$ gives rise to greedy policy $\pi_{V}$ which, when evaluated, yields $V_{V}$. In general, $V \neq V_{V}$. Equality occurs if and only if $V=V^*$, in which case any greedy policy will be optimal.\\
-\textcolor{red}{Why $V^*(s)$ stationary?} \\
 If we know $V^*$, how to get $\pi^*$? \\
 Compute the RHS in the bracket of the bellman optimality equation for every single action and take the argmax. Sometimes it's not available in reinforcement learning, because we don't the transition dynamics in the learning setting.\\
 In reinforcement learning, it's easier to work with Q-values: $Q^*(s,a)$, as $\pi^*(s)=arg\max_{a\in A}Q^*(s,a)$. 
 \begin{equation}\label{eq4}
     Q^*(s,a)=R(s,a)+\gamma E_{s'\sim P(s,a)}[\max_{a'\in A}Q^*(s',a')]
 \end{equation}
+\begin{proposition}
+    There is a deterministic, stationary and optimal policy and it is given by $\pi^*(s)=arg\max_{a}Q^*(s,a)$.
+\end{proposition}
+\begin{proof}
+    $\pi^*$ is stationary. 
+    \begin{equation*}
+        \begin{split}
+            V^{\pi'}(s)\leq V^*(s)&=V^{\pi^*}(s)=\E_{a\sim \pi^*(a\mid s)}[Q^{\pi^*}(s,a)]\\
+            &\leq \max_{a}Q^{\pi^*}(s,a) \\
+            &=\max_{a}Q^*(s,a) \\
+            &=Q(s,\pi'(s))=V^{\pi'}(s) \quad \text{define $\pi'(s)=arg\max_{a}Q^*(s,a)$}
+        \end{split}
+    \end{equation*}
+    \begin{enumerate}
+        \item Check $\pi'$ is stationary
+        \item $\pi'$ is deterministic
+    \end{enumerate}
+\end{proof}
 We often say the policy is a greedy policy of the particular Q-function by the way of inducing a policy from a state-action function/Q-function. $\pi^*(s)$ is the greedy policy with respect to $Q^*$. We use shorthand $\pi_Q$ to denote the procedure of turning a Q-value function into its greedy policy, and the above equation can be written as \[\pi^*=\pi_{Q^*}:=(s \mapsto arg\max_{a\in A}Q^*(s,a))\].
 \[
 V^*=V^{\pi^*},
@@ -264,6 +332,7 @@ Q^*=Q^{\pi^*}
 \]
 $V^*$ and $Q^*$ are uniquely defined, but the $\pi^*$ is not necessarily unique. For example, consider an MDP where the immediate rewards are zero everywhere, then any policy is optimal. 
 Bellman operators:$\mathcal{T}: \mathbb{R}^{S\times A}\rightarrow \mathbb{R}^{S\times A}$, $\forall f \in \mathbb{R}^{S\times A}$, $(\mathcal{T}f)(s,a)=R(s,a)+\gamma E_{s'\sim P(s,a)}[V_f(s')]$, where $V_f(s'):=\max_{a'}f(s',a')$. This allows us to rewrite Bellman Optimality Equation \ref{eq4} in the following concise form, which implies that $Q^*$ is the fixed point of the operator $\mathcal{T}$:\[Q^*=\mathcal{T}Q^*\]. Similarly define $\mathcal{T}^{\pi}: \mathbb{R}^{S\times A}\rightarrow \mathbb{R}^{S\times A}$, $(\mathcal{T}^{\pi}f)(s,a)=R(s,a)+\gamma E_{s'\sim P(s,a)}[f(s',\pi(s'))]$. We can rewrite the Bellman Equation for Policy Evaluation \ref{eq2} to \[Q^{\pi}=\mathcal{T}^{\pi}Q^{\pi}\]. With abuse of notation, we can write bellman equation for value function as $V^{*}=\mathcal{T}V^*$ and $V^{\pi}=\mathcal{T}^{\pi}V^{\pi}$. Strictly speaking, the $\mathcal{T}$ and $\mathcal{T}^{\pi}$ here are different from the equation above.
+
 \subsection{Evaluation error to decision loss}
 There are K items, $1, 2,\hdots, K$. The i-th item has value $v_i \in \mathbb{R}$. Let $v^*:=\max_{i \in [K]}v_i$, where $[K]:=\{1,2,\hdots,K\}$, and $i^*:=arg\max_{i \in [K]}v_i$. An agent chooses the j-th item, where $j:=arg\max_{i \in [K]}u_i$, and $\{u_i\}_{i=1}^{K}$ are K real numbers. Let \[
 \epsilon:=\max_{i \in [K]}|u_i-v_i|.
@@ -293,7 +362,7 @@ The algorithm: define $Q^{*,0}:=\Vec{0}\in \mathbb{R}^{S\times A}$. \[Q^{*,h}:=\
 \[\pi_h := \pi_{Q^{*,h}}, Q^{*,h} \neq Q^{\pi_h}\].
 Let's answer the second question first. I have an arbitrary $f\in \mathbb{R}^{S\times A}$. I'll act using $\pi_f$ in M. Assume that I know that $\Vert f-Q^*\Vert$ is small. Can I bound $V^{*}-V^{\pi_f}$?
 \begin{lemma}[\cite{Singh1994AnFunctions}]
-    \[\Vert  V^*-V^{ \pi_f} \Vert_{\infty} \leq \frac{\alpha \Vert f-Q^{*}\Vert_{\infty}}{1-\gamma}\]
+    \[\Vert  V^*-V^{ \pi_f} \Vert_{\infty} \leq \frac{2 \Vert f-Q^{*}\Vert_{\infty}}{1-\gamma}\]
 \end{lemma}
 \begin{proof}
 $\Vert V^*-V^{\pi_f}\Vert_{\infty}$ is always non-negative by definition. $\forall s$, 
@@ -314,7 +383,7 @@ So, \[
 \]
 $f(s,\pi_f(s)) \geq f(s,\pi^*(s'))$ holds because by definiton: $\pi_f=arg\max_{a\in A}f(s,a)$, $f(s,\pi_f(s))=\max_{a\in A}f(s,a) \geq f(s,a'), \forall a' \in A$.
 \end{proof}
-For finite-horizon \[\Vert  V^*-V^{ \pi_f} \Vert_{\infty} \leq \alpha H \Vert f-Q^{*}\Vert_{\infty}\]
+For finite-horizon \[\Vert  V^*-V^{ \pi_f} \Vert_{\infty} \leq 2 H \Vert f-Q^{*}\Vert_{\infty}\]
 \[\frac{1}{1-\gamma} \sim H\].
 Then it remains to show that by performing value iteration for a large number of iterations, we'll get a good  approximation of $Q^*$ under the infinity norm. Goal: bound $\Vert Q^{*,H}-Q^{*}\Vert_{\infty}$.
 \begin{lemma}
@@ -381,10 +450,16 @@ $\forall s,a$, \begin{equation*}
         &= E[(\sum_{t=1}^{\infty}\gamma^{t-1}r_t)-(\sum_{t=1}^{H}\gamma^{t-1}r_t)\mid s_1=s,a_1=a,\pi^*] \\
         &=E[\sum_{t=H+1}^{\infty}\gamma^{t-1}r_t \mid s_1=s,a_1=a,\pi^*]\\
         &\leq \gamma^H(\sum_{t=1}^{\infty} \gamma^{t-1}R_{max}) \\
-        &=\frac{\gamma^H R_{max}}{1-\gamma}
+        &=\frac{\gamma^H R_{max}}{1-\gamma}=R_{max}\frac{(1-(1-\gamma))^H}{1-\gamma} \\
+        & \leq R_{max}\frac{e^{-(1-\gamma)^k}}{1-\gamma}
     \end{split}
 \end{equation*}
+The last inequality uses\[
+\lim_{n\rightarrow \infty}(1-\frac{1}{n})^n=e^{-1} \Rightarrow (1-\frac{1}{n})^n \leq e^{-1} \quad \forall n
+\]
+We can compute iteration complexity from the convergence bound. Set $\epsilon=\frac{e^{-(1-\gamma)^k}}{1-\gamma}$, the solve this equation to get $k=\frac{\log{\epsilon(1-\gamma)}}{-(1-\gamma)}$.Convergence of the Q function implies the convergence of the value of the induced policy.\\
 If $Q^{*,0}$ is not a zero vector. We modify the definition as \[ V^{\pi, H}(s) := E[\sum_{t=1}^{H}\gamma^{t-1}r_t+\gamma^{H}Q^{*,0}(s_H,a_H) \mid \pi, s_1=s]\]. In other words, $Q^{*,0}=\Vec{0}$ is a special case where $Q^{*,0}(s_H,a_H)=0$.
+
 \subsection{Policy Iteration}
 Initial $\pi_0$ arbitrarily, and repeat the following iterative procedure: for $k=1,2,\hdots$, $\pi_k \leftarrow \pi_{Q^{\pi_{k-1}}}$.
 \begin{enumerate}
