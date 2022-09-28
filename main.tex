@@ -9,6 +9,8 @@
 \usepackage{biblatex} %Imports biblatex package
 \addbibresource{references.bib} %Import the bibliography file
 \newtheorem{theorem}{Theorem}[section]
+\newtheorem{definition}{Definition}[theorem]
+\newtheorem{proposition}{Proposition}[theorem]
 \newtheorem{corollary}{Corollary}[theorem]
 \newtheorem{lemma}[theorem]{Lemma}
 \usepackage[colorlinks=true]{hyperref}
@@ -96,6 +98,7 @@ Suppose there exists some constant $H_0$ such that $H \leq H_0$ holds almost sur
 
 \subsection{Non-stationary dynamics}
 So far all our definitions consider stationary dynamics, that is, the transition function only depends on the state and action, and does not depend on the time step. A finite-horizon MDP with non-stationary dynamics (and reward function) is a generalization: $M=(S,A,\{P_H\}_{h=1}^H,H,d_0)$, where $s_1\sim d_0,s_{h+1}\sim P_h(s_h,a_h)$ and $r_{h+1}=R_h(s_h,a_h)$. That is, the transition rule and reward function can change as time elapses. Stationary MDP is a special case of non-stationary MDP, $S_1=S_2=\hdots=S_H, P_1=P_2=\hdots=P_H$. On the other hand, non-stationary MDP is also a special case of stationary MDP, we can augment state space $s'=(s,h)$. Now the state space is H time larger, the benefit is that we can have a single function $P((s',h+1)\mid (s',h),a)$ and not every function for every time-step. By definition, $P((s',h')\mid (s,h),a)=0$ if $h'-h \neq 1$.
+
 \subsection{Policy and value}
 A (deterministic and stationary) policy $\pi:S\rightarrow A$ specifies a decision-making strategy in which the agent chooses actions adaptively based on the current state, i.e., $a_t = \pi(s_t)$. More generally, the agent may also choose actions according to a stochastic policy $\pi:S\rightarrow \Delta(A)$, and with a slight abuse of notation we write $a_t \sim \pi(s_t)$. A deterministic policy is its special case when $\pi(s)$ is a point mass for all $s\in S$. \\
 The goal of the agent is to choose a policy $\pi$ to maximize the expected discounted sum of rewards, or value:
@@ -206,23 +209,53 @@ Hölder's inequality tells us that L1-norm and infinity norm are dual pairs.
 \end{enumerate}
 
 \subsection{Optimality}
-For infinite-horizon discounted MDPs, there always exists a 
-stationary and deterministic policy that is optimal for all starting states simultaneously. Let $\pi^*$ denote this optimal policy, and $V^* := V^{\pi^*}$. Bellman optimality equation: 
+The standard goal in an MDP is to identify a policy that maximizes this value in every state. A policy achieving this is known as an optimal policy. Whether an optimal policy exists at all is not clear at this stage. In any case, if it exist, an optimal policy must satisfy $V^{\pi}=V^*$ where $v^*:S\rightarrow \mathbb{R}$ is defined by \[
+v^*(s)=\sup_{\pi}V^{\pi}(s),s\in S.  
+\]
+Let $\epsilon>0$. A policy $\pi$ is said to be $\epsilon$-optimal if \[
+V^{\pi} \geq V^*-\epsilon\Vec{1}.
+\]
+Finding an $\epsilon$-optimal policy with a positive $\epsilon$ should intuitively be easier than finding an optimal policy.
+\begin{enumerate}
+    \item Understand why such $\pi^*$ exists?
+    \item What does $\pi^*$ looks like?
+\end{enumerate}
+\begin{proposition}
+It suffices to consider stationary policies.
+\end{proposition}
+\begin{proof}
+    It suffices to show that:\\
+    For any $\pi$, $\exists \pi'$ such that $\pi'$ is stationary and both $\pi$ and $\pi'$ have the same value: $V^{\pi}(\mu)=V^{\pi'}(\mu)$.\\
+    By definition:
+    \begin{equation*}
+        \begin{split}
+            V^{\pi}(\mu)&=E^{\pi}_{s}[\sum_{t=1}^{\infty}\gamma^{t-1}r(S_t,A_t)]\\
+            &=\sum_{t=1}^{\infty}\gamma^{t-1}E_{\mu}^{\pi}[r(S_t,A_t)]\\
+            &=\sum_{t=1}^{\infty}\gamma^{t-1}\sum_{s,a}P_{\mu}^{\pi}(S_t=s,A_t=a)r(s,a)\\
+            &=\sum_{s,a}[\sum_{t=1}^{\infty}\gamma^{t-1}P_{\mu}^{\pi}(S_t=s,A_t=a)]r(s,a)\\
+            &=\sum_{s,a}\nu_{\mu}^{\pi}(s,a)r(s,a)
+        \end{split}
+    \end{equation*}
+\end{proof}
+For infinite-horizon discounted MDPs, a
+stationary and deterministic policy always exists that is optimal for all starting states simultaneously. Let $\pi^*$ denote this optimal policy, and $V^* := V^{\pi^*}$. Bellman optimality equation: 
 \begin{equation}\label{eq3}
-    V^*(s)=\max_{a\in A}(R(s,a)+\gamma E_{s'\sim P(s,a)}[V^*(s')])
+    V^*(s)=\max_{a\in A}Q^*(s,a)=\max_{a\in A}(R(s,a)+\gamma E_{s'\sim P(s,a)}[V^*(s')])
 \end{equation}
 . Different from the bellman equation:
 \begin{enumerate}
     \item no reference to any policy $\pi$.
     \item the max operator which makes this a nonlinear set of equations
 \end{enumerate}
-Why $V^*(s)$ stationary? \\
-Blank Blank  Blank \\
+Given the value function $V$, a greedy policy $\pi_{V}$ can be defined by selecting for each state the action that maximizes the state's value, i.e.,\[
+\pi_{V}(s)=arg\max_{a\in A}[R(s,a)+\gamma \sum_{s' \in S}P_{ss'}(a)V(s')],
+\] where ties for the maximum action are broken arbitrarily. Evaluating a greedy policy $\pi_{V}$ yields a new value function $V_{\pi_{V}}$, which we abbreviate as $V_{V}$. Value function $V$ gives rise to greedy policy $\pi_{V}$ which, when evaluated, yields $V_{V}$. In general, $V \neq V_{V}$. Equality occurs if and only if $V=V^*$, in which case any greedy policy will be optimal.\\
+\textcolor{red}{Why $V^*(s)$ stationary?} \\
 If we know $V^*$, how to get $\pi^*$? \\
 Compute the RHS in the bracket of the bellman optimality equation for every single action and take the argmax. Sometimes it's not available in reinforcement learning, because we don't the transition dynamics in the learning setting.\\
 In reinforcement learning, it's easier to work with Q-values: $Q^*(s,a)$, as $\pi^*(s)=arg\max_{a\in A}Q^*(s,a)$. 
 \begin{equation}\label{eq4}
-    Q^*(s,a)=R(s,a)+\gamma E_{s'\sim P(s,a)}[max_{a'\in A}Q^*(s',a')]
+    Q^*(s,a)=R(s,a)+\gamma E_{s'\sim P(s,a)}[\max_{a'\in A}Q^*(s',a')]
 \end{equation}
 We often say the policy is a greedy policy of the particular Q-function by the way of inducing a policy from a state-action function/Q-function. $\pi^*(s)$ is the greedy policy with respect to $Q^*$. We use shorthand $\pi_Q$ to denote the procedure of turning a Q-value function into its greedy policy, and the above equation can be written as \[\pi^*=\pi_{Q^*}:=(s \mapsto arg\max_{a\in A}Q^*(s,a))\].
 \[
@@ -231,37 +264,55 @@ Q^*=Q^{\pi^*}
 \]
 $V^*$ and $Q^*$ are uniquely defined, but the $\pi^*$ is not necessarily unique. For example, consider an MDP where the immediate rewards are zero everywhere, then any policy is optimal. 
 Bellman operators:$\mathcal{T}: \mathbb{R}^{S\times A}\rightarrow \mathbb{R}^{S\times A}$, $\forall f \in \mathbb{R}^{S\times A}$, $(\mathcal{T}f)(s,a)=R(s,a)+\gamma E_{s'\sim P(s,a)}[V_f(s')]$, where $V_f(s'):=\max_{a'}f(s',a')$. This allows us to rewrite Bellman Optimality Equation \ref{eq4} in the following concise form, which implies that $Q^*$ is the fixed point of the operator $\mathcal{T}$:\[Q^*=\mathcal{T}Q^*\]. Similarly define $\mathcal{T}^{\pi}: \mathbb{R}^{S\times A}\rightarrow \mathbb{R}^{S\times A}$, $(\mathcal{T}^{\pi}f)(s,a)=R(s,a)+\gamma E_{s'\sim P(s,a)}[f(s',\pi(s'))]$. We can rewrite the Bellman Equation for Policy Evaluation \ref{eq2} to \[Q^{\pi}=\mathcal{T}^{\pi}Q^{\pi}\]. With abuse of notation, we can write bellman equation for value function as $V^{*}=\mathcal{T}V^*$ and $V^{\pi}=\mathcal{T}^{\pi}V^{\pi}$. Strictly speaking, the $\mathcal{T}$ and $\mathcal{T}^{\pi}$ here are different from the equation above.
+\subsection{Evaluation error to decision loss}
+There are K items, $1, 2,\hdots, K$. The i-th item has value $v_i \in \mathbb{R}$. Let $v^*:=\max_{i \in [K]}v_i$, where $[K]:=\{1,2,\hdots,K\}$, and $i^*:=arg\max_{i \in [K]}v_i$. An agent chooses the j-th item, where $j:=arg\max_{i \in [K]}u_i$, and $\{u_i\}_{i=1}^{K}$ are K real numbers. Let \[
+\epsilon:=\max_{i \in [K]}|u_i-v_i|.
+\]Upper-bound $v^*-v_j$ as a function of $\epsilon$.
+\begin{proof}
+    \begin{equation*}
+        \begin{split}
+            v^*-v_j = |v^*-v_j|  &= |v^*-u_{i^*}+u_{i^*}-v_j|\\
+            &\leq |v^*-u_{i^*}| + |u_{i^*}-v_j|\\
+            &\leq \epsilon + |u_{i^*}-v_j|
+        \end{split}
+    \end{equation*}
+\end{proof}
+If we further have $\forall i, u_i \leq v_i$, the upper bound is \[
+v^*-v_j = v^*-u_{i^*}-v_j+u_{i^*}-v_j \leq v^*-u_{i^*}-v_j+u_j-v_j \leq 2\epsilon
+\]. It's the same for $\forall i, u_i \geq v_i$. The upper bound of $|u_j-v^*|$ is $u_j-u_{i^*}+\epsilon$.
 
 \section{Planning in MDPs}
 Planning means we want to compute $V^{\pi}, Q^{\pi}, V^{*}, Q^{*}$ given the MDP model. Value iteration and policy iteration are two basic algorithms for planning.
 \subsection{Value Iteration}
-In value iteration, we are interested in computing $Q^*$ and it satisfies the bellman optimality equation $Q^*=\mathcal{T}Q^*$. In general, the equation is a fix point equation, and $\mathcal{T}$ is the fix point operator. This kind of problem is studied extensively in numerical analysis. One of the most  basic ideas you can try here is the power method which starts with an arbitrary function and keeps applying the operator. If the operator satisfies some property, it's getting closer and closer to the real function. We'll show that $\mathcal{T}$ satisfies the contraction property in the MDP setting.\\
+In value iteration, we are interested in computing $Q^*$ and it satisfies the bellman optimality equation $Q^*=\mathcal{T}Q^*$. Recall that $\mathcal{T}$ is the Bellman optimality operator. In general, the equation is a fix point equation, and $\mathcal{T}$ is the fix point operator. This kind of problem is studied extensively in numerical analysis. One of the most  basic ideas you can try here is the power method which starts with an arbitrary function and keeps applying the operator. If the operator satisfies some property, it's getting closer and closer to the real function. We'll show that $\mathcal{T}$ satisfies the contraction property in the MDP setting.\\
 The algorithm: define $Q^{*,0}:=\Vec{0}\in \mathbb{R}^{S\times A}$. \[Q^{*,h}:=\mathcal{T}Q^{*,h-1}\], stop at large $h=H$. There are two questions:
 \begin{itemize}
     \item How large is $\Vert Q^*-Q^{*, H}\Vert$?
     \item Can I extract a good policy from $Q^{*, H}$? How good is this policy $\pi_{Q^{*, H}}$?
 \end{itemize}
 \[\pi_h := \pi_{Q^{*,h}}, Q^{*,h} \neq Q^{\pi_h}\].
-Let's answer the second question first. I have an arbitrary $f\in \mathbb{R}^{S\times A}$. I'll act using $\pi_f$ in M. I know that $\Vert f-Q^*\Vert$ is small. Can I bound $V^{*}-V^{\pi_f}$?\\
-Result: \[\Vert  V^*-V^{ \pi_f} \Vert_{\infty} \leq \frac{\alpha \Vert f-Q^{*}\Vert_{\infty}}{1-\gamma}\]\cite{Singh1994AnFunctions}
+Let's answer the second question first. I have an arbitrary $f\in \mathbb{R}^{S\times A}$. I'll act using $\pi_f$ in M. Assume that I know that $\Vert f-Q^*\Vert$ is small. Can I bound $V^{*}-V^{\pi_f}$?
+\begin{lemma}[\cite{Singh1994AnFunctions}]
+    \[\Vert  V^*-V^{ \pi_f} \Vert_{\infty} \leq \frac{\alpha \Vert f-Q^{*}\Vert_{\infty}}{1-\gamma}\]
+\end{lemma}
 \begin{proof}
 $\Vert V^*-V^{\pi_f}\Vert_{\infty}$ is always non-negative by definition. $\forall s$, 
 \begin{equation*}
 \begin{split}
 V^{*}(s)-V^{\pi}(s) &= Q^*(s,\pi^*(s))-Q^{\pi_f}(s,\pi_f(s))\\
 &= Q^*(s,\pi^*(s))-Q^*(s,\pi_f(s))+Q^*(s,\pi_f(s))-Q^{\pi_f}(s,\pi_f(s))\\
-&\leq Q*(s,\pi^{*}(s))-f(s,\pi^{*}(s))+f(s,\pi_f(s))-Q^*(s,\pi_f(s))\\
-& +R(s,\pi_f(s))+\gamma E_{s'\sim P(s,\pi_f)}[V^*(s')]-R(s,\pi_f) - \gamma E_{s'\sim P(s,\pi_f)}[V^{\pi_f}(s')] \\
+&\leq Q^*(s,\pi^{*}(s))-f(s,\pi^{*}(s))+f(s,\pi_f(s))-Q^*(s,\pi_f(s))\\
+& +R(s,\pi_f(s))+\gamma E_{s'\sim P(s,\pi_f)}[V^*(s')]-R(s,\pi_f(s)) - \gamma E_{s'\sim P(s,\pi_f)}[V^{\pi_f}(s')] \\
 &\leq Q*(s,\pi^{*}(s))-f(s,\pi^{*}(s))+f(s,\pi_f(s))-Q^*(s,\pi_f(s))\\
 &+ \gamma E_{s'\sim P(s,\pi_f)}[V^*(s')-V^{\pi_f}(s')] \\
-&\leq Q*(s,\pi^{*}(s))-f(s,\pi^{*}(s))+f(s,\pi_f(s))-Q^*(s,\pi_f(s)) + \gamma \Vert V^*-V^{\pi_f} \Vert_{\infty} \\
+&\leq Q^*(s,\pi^{*}(s))-f(s,\pi^{*}(s))+f(s,\pi_f(s))-Q^*(s,\pi_f(s)) + \gamma \Vert V^*-V^{\pi_f} \Vert_{\infty} \\
 &\leq 2\Vert f-Q^*\Vert_{\infty} + \gamma \Vert V^*-V^{\pi_f} \Vert_{\infty}
 \end{split}
 \end{equation*}
 So, \[
 \Vert V^*-V^{\pi_f} \Vert_{\infty} \leq 2\Vert f-Q^*\Vert_{\infty} + \gamma \Vert V^*-V^{\pi_f} \Vert_{\infty}
 \]
-$f(s,\pi_f(s)) \geq f(s,\pi^*(s'))$. By def: $\pi_f=arg\max_{a\in A}f(s,a)$. $f(s,\pi_f(s))=\max_{a\in A}f(s,a) \geq f(s,a'). \forall a' \in A$.
+$f(s,\pi_f(s)) \geq f(s,\pi^*(s'))$ holds because by definiton: $\pi_f=arg\max_{a\in A}f(s,a)$, $f(s,\pi_f(s))=\max_{a\in A}f(s,a) \geq f(s,a'), \forall a' \in A$.
 \end{proof}
 For finite-horizon \[\Vert  V^*-V^{ \pi_f} \Vert_{\infty} \leq \alpha H \Vert f-Q^{*}\Vert_{\infty}\]
 \[\frac{1}{1-\gamma} \sim H\].
@@ -342,20 +393,26 @@ Initial $\pi_0$ arbitrarily, and repeat the following iterative procedure: for $
 \end{enumerate}
 Assume we can solve $Q^{\pi}$ for given $\pi$. How?
 \[
-Q^{\pi}=\mathcal{T}^{\pi}Q^{\pi}. (\mathcal{T}^{\pi}f)(s,a)=R(s,a)+\gamma E_{s'\sim P(s,a)}[f(s',\pi)].
+Q^{\pi}=\mathcal{T}^{\pi}Q^{\pi}.
+\]
+\[
+ (\mathcal{T}^{\pi}f)(s,a)=R(s,a)+\gamma E_{s'\sim P(s,a)}[f(s',\pi)].
 \]
 The above is a linear equation that can solve by matrix inverse. Alternatively, start with arbitrarily $f_0$, $f_i \leftarrow \mathcal{T}^{\pi}f_{i-1}$(works because $\mathcal{T}^{\pi}$ is $\gamma$-contraction under $l_{\infty}$).
 \begin{theorem}[Policy improvement theorem]
- $V^{\pi_k} \geq V^{\pi_{k-1}}$. Furthermore, unless $\pi_k=\pi^*$ , improvement in at least 1 state is non-zero.
+ $V^{\pi_k} \geq V^{\pi_{k-1}}$. Furthermore, unless $\pi_k=\pi^*$ , improvement in at least 1 state is non-zero.\cite{Puterman2005MarkovProgramming}
 \end{theorem}
+Therefore, the termination criterion for policy iteration is $Q^{\pi_k}=Q^{\pi_{k-1}}$. Since we are only searching over stationary and deterministic policies, a new policy that is different from all previous ones is found in every iteration.
 \begin{corollary}
 PI terminates in at most $|A|^{|S|}$ iterations.
 \end{corollary}
 \begin{proof}
-    "Monotonicity of $\mathcal{T}$": $\forall f \leq f'$, $\mathcal{T}f \leq \mathcal{T}f'$.\[
-        (\mathcal{T}f)(s,a)=R(s,a)+\gamma E_{s'\sim P(s,a)}[\max_{a'}f(s',a')]
+    Claim: "Monotonicity of $\mathcal{T}$": $\forall f \leq f'$, $\mathcal{T}f \leq \mathcal{T}f'$. By definition: \[
+        (\mathcal{T}f)(s,a)=R(s,a)+\gamma E_{s'\sim P(s,a)}[\max_{a'}f(s',a')],
+    \] \[
+        v_f:=\max_{a'}f(s',a').
     \]
-    ($v_f \leq v_{f'}$)\\ 
+    This claim holds because $v_f \leq v_{f'}$.\\ 
     \begin{equation*}
         \begin{split}
             Q^{\pi_k}=\mathcal{T}^{\pi_k}Q^{\pi_k}\leq \mathcal{T}Q^{\pi_k}=\mathcal{T}^{\pi_{k+1}}Q^{\pi_k}
@@ -371,17 +428,20 @@ PI terminates in at most $|A|^{|S|}$ iterations.
             Q^{\pi_k} &\leq \mathcal{T}^{\pi_{k+1}}Q^{\pi_k} \\
             & \leq \mathcal{T}^{\pi_{k+1}}(\mathcal{T}^{\pi_{k+1}}Q^{\pi_k}) \text{(policy evaluation operator also has monotonicity property)}\\
             & \leq (\mathcal{T}^{\pi_{k+1}})^{\infty}Q^{\pi_k} \\
-            & = Q^{\pi_{k+1}}
+            & = Q^{\pi_{k+1}} \text{($Q^{\pi_{k+1}}$ is the fix point of $\mathcal{T}^{\pi_{k+1}}$)}
         \end{split}
     \end{equation*}
 \end{proof}
 \begin{proof}[Alternative Proof]
-    Define: (Advantage function) $A^{\pi}(s,a)=Q^{\pi}(s,a)-V^{\pi}(s)$. $A^{\pi}(s,\pi)=0$. It measure the deviation from choosing a action a and then following the policy $\pi$ with following policy $\pi$.
-    \begin{lemma}[Performance-diff lemma\cite{Kakade2002ApproximatelyLearning}]
-        $\forall \pi',\pi$, \[
-            V^{\pi'}(s)-V^{\pi}(s)=\frac{1}{1-\gamma}E_{s'\sim d^{\pi',s}}[A^{\pi}(s',\pi')]
+    \begin{definition}[Advantage]
+    $A^{\pi}(s,a)=Q^{\pi}(s,a)-V^{\pi}(s)$. $A^{\pi}(s,\pi)=0$. It measures the deviation of choosing action a and then following the policy $\pi$ from following policy $\pi$. The advantage of policy $\pi'$ over policy $\pi$ is defined as $A^{\pi}(s,\pi'):=A^{\pi}(s,\pi'(s))$.
+    \end{definition}
+    Since policy iteration always takes the greedy policy of the current policy’s Q-value function, by definition the advantage of the new policy over the old one is non-negative. The next result shows that the value difference between two policies can be expressed using the advantage function. The policy improvement theorem immediately follows, since $V^{\pi_k}(s)-V^{\pi_{k-1}}(s)$ can be decomposed into the sum of nonnegative terms.
+    \begin{lemma}[Performance-difference lemma\cite{Kakade2002ApproximatelyLearning}]
+        $\forall \pi',\pi$, and any state $s\in S$, \[
+            V^{\pi'}(s)-V^{\pi}(s)=\frac{1}{1-\gamma}E_{s'\sim d^{\pi',s}}[A^{\pi}(s',\pi')],
         \] 
-        $d^{\pi',s}$ is the normalized occupancy of $\pi'$ with s as initial state.\\
+        where $d^{\pi',s}$ is the normalized occupancy of $\pi'$ with s as initial state.\\
         $d^{\pi}=(1-\gamma)\sum_{t=1}^{\infty}\gamma^{t-1}d^{\pi}_t$, $d^{\pi}_t$ is the distribution of $s_t$ under $\pi$, starting from $d_0$.
     \end{lemma}
     \begin{equation*}
@@ -398,7 +458,7 @@ PI terminates in at most $|A|^{|S|}$ iterations.
     \end{equation*}
 
 \end{proof}
-\begin{proof}[Strictness] Towards contridiction: $V^{\pi_{k+1}}=V^{\pi_{k}}$. $\forall s'$, \[
+\begin{proof}[Strictness] Towards contradiction: $V^{\pi_{k+1}}=V^{\pi_{k}}$. $\forall s'$, \[
         A^{\pi_k}(s',\pi_{k+1})= 0 
     \]. \[
         Q^{\pi_k}(s',\pi_k)=\max_{a'}Q^{\pi_k}(s',a')
